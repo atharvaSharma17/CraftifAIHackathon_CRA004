@@ -32,9 +32,17 @@ type Service struct {
 	subscribers  map[chan Snapshot]bool
 }
 
-func NewService(m Map, s *Store) *Service {
-	return &Service{engine: NewEngine(m), store: s, subscribers: map[chan Snapshot]bool{}, vehicle: Simulator{Simulated: true, Status: "idle"}}
+func NewService(m Map, s *Store) (*Service, error) {
+	var routeVersion, graphVersion int64
+	if err := s.db.QueryRow(`SELECT COALESCE(MAX(json_extract(payload,'$.route_version')),0) FROM events WHERE kind='route'`).Scan(&routeVersion); err != nil {
+		return nil, err
+	}
+	if err := s.db.QueryRow(`SELECT count(*) FROM events WHERE kind='occupancy'`).Scan(&graphVersion); err != nil {
+		return nil, err
+	}
+	return &Service{engine: NewEngine(m), store: s, routeVersion: routeVersion, graphVersion: graphVersion, subscribers: map[chan Snapshot]bool{}, vehicle: Simulator{Simulated: true, Status: "idle"}}, nil
 }
+func (s *Service) Map() Map { s.mu.Lock(); defer s.mu.Unlock(); return s.engine.Map }
 func (s *Service) snapshot() Snapshot {
 	return Snapshot{Occupancy: s.engine.Snapshot(), EdgeStates: s.engine.EdgeStates(), Route: s.route, Mission: s.mission, Vehicle: s.vehicle, PerceptionConnected: s.engine.Connected(), CalibrationVerified: s.engine.Map.CalibrationVerified, LastFrameAt: s.engine.LastReceived, GraphVersion: s.graphVersion, ReceivedFrames: s.frames, AcceptedSource: "pipegen-deepstream"}
 }

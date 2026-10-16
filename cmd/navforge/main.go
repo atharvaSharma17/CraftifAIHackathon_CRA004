@@ -29,7 +29,10 @@ func main() {
 		log.Fatal(err)
 	}
 	defer store.Close()
-	service := nav.NewService(m, store)
+	service, err := nav.NewService(m, store)
+	if err != nil {
+		log.Fatal(err)
+	}
 	if _, err = store.Commit(nil, []nav.Pending{{Kind: "startup", Payload: map[string]any{"map_id": m.ID, "calibration_version": m.CalibrationVersion, "calibration_verified": m.CalibrationVerified, "policy": m.Policy, "note": "Perception and missions reset on restart; historical evidence retained"}}}); err != nil {
 		log.Fatal(err)
 	}

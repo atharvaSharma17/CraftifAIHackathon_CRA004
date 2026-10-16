@@ -38,7 +38,7 @@ func (s *Service) PublicHandler() http.Handler {
 		snap := s.Snapshot()
 		JSON(w, 200, map[string]any{"status": "ok", "perception_connected": snap.PerceptionConnected, "calibration_verified": snap.CalibrationVerified, "simulated_vehicle": true})
 	})
-	mux.HandleFunc("GET /api/map", func(w http.ResponseWriter, r *http.Request) { JSON(w, 200, s.engine.Map) })
+	mux.HandleFunc("GET /api/map", func(w http.ResponseWriter, r *http.Request) { JSON(w, 200, s.Map()) })
 	mux.HandleFunc("GET /api/state", func(w http.ResponseWriter, r *http.Request) { JSON(w, 200, s.Snapshot()) })
 	mux.HandleFunc("GET /api/routes/current", func(w http.ResponseWriter, r *http.Request) { JSON(w, 200, s.Snapshot().Route) })
 	mux.HandleFunc("GET /api/occupancy", func(w http.ResponseWriter, r *http.Request) {
@@ -134,7 +134,7 @@ func (s *Service) IngestHandler(token string) http.Handler {
 			JSON(w, 400, map[string]string{"error": err.Error()})
 			return
 		}
-		if err := o.Validate(s.engine.Map); err != nil {
+		if err := o.Validate(s.Map()); err != nil {
 			JSON(w, 400, map[string]string{"error": err.Error()})
 			return
 		}

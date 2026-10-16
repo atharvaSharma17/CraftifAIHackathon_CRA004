@@ -2,7 +2,7 @@
   "name": "navforge-dashboard",
   "private": true,
   "version": "0.1.0",
-  "scripts": {"dev":"next dev --hostname 127.0.0.1", "build":"next build", "start":"next start --hostname 127.0.0.1", "typecheck":"tsc --noEmit"},
+  "scripts": {"dev":"node ./node_modules/next/dist/bin/next dev --hostname 127.0.0.1", "build":"node ./node_modules/next/dist/bin/next build", "start":"node ./node_modules/next/dist/bin/next start --hostname 127.0.0.1", "typecheck":"node ./node_modules/typescript/bin/tsc --noEmit"},
   "dependencies": {"next":"^16.0.0", "react":"^19.0.0", "react-dom":"^19.0.0"},
   "devDependencies": {"typescript":"^5.9.0", "@types/node":"^22.0.0", "@types/react":"^19.0.0", "@types/react-dom":"^19.0.0"}
 }

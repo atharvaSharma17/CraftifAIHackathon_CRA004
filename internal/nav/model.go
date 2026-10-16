@@ -8,6 +8,21 @@ import (
 	"time"
 )
 
+type Dimensions [2]int
+func (v *Dimensions) UnmarshalJSON(b []byte) error {
+ var values []int
+ if err := json.Unmarshal(b, &values); err != nil { return err }
+ if len(values) != 2 { return fmt.Errorf("image_size must contain exactly two integers") }
+ copy(v[:], values); return nil
+}
+type Box [4]float64
+func (v *Box) UnmarshalJSON(b []byte) error {
+ var values []float64
+ if err := json.Unmarshal(b, &values); err != nil { return err }
+ if len(values) != 4 { return fmt.Errorf("bbox_xywh_px must contain exactly four numbers") }
+ copy(v[:], values); return nil
+}
+
 type Node struct {
 	ID    string  `json:"id"`
 	X     float64 `json:"x"`
@@ -52,7 +67,7 @@ type Map struct {
 	ID                  string           `json:"id"`
 	CalibrationVersion  string           `json:"calibration_version"`
 	CameraID            string           `json:"camera_id"`
-	ImageSize           [2]int           `json:"image_size"`
+	ImageSize           Dimensions       `json:"image_size"`
 	CalibrationVerified bool             `json:"calibration_verified"`
 	Nodes               []Node           `json:"nodes"`
 	Edges               []Edge           `json:"edges"`
@@ -127,7 +142,7 @@ type Object struct {
 	TrackID    string     `json:"track_id,omitempty"`
 	ClassLabel string     `json:"class_label"`
 	Confidence float64    `json:"confidence"`
-	BBox       [4]float64 `json:"bbox_xywh_px"`
+	BBox       Box        `json:"bbox_xywh_px"`
 }
 type Observation struct {
 	SchemaVersion      string   `json:"schema_version"`
@@ -137,7 +152,7 @@ type Observation struct {
 	SessionID          string   `json:"session_id"`
 	FrameIndex         int64    `json:"frame_index"`
 	VideoTSMS          int64    `json:"video_ts_ms"`
-	ImageSize          [2]int   `json:"image_size"`
+	ImageSize          Dimensions `json:"image_size"`
 	CalibrationVersion string   `json:"calibration_version"`
 	Objects            []Object `json:"objects"`
 }
