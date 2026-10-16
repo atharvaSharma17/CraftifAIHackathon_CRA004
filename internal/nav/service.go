@@ -40,7 +40,15 @@ func NewService(m Map, s *Store) (*Service, error) {
 	if err := s.db.QueryRow(`SELECT count(*) FROM events WHERE kind='occupancy'`).Scan(&graphVersion); err != nil {
 		return nil, err
 	}
-	return &Service{engine: NewEngine(m), store: s, routeVersion: routeVersion, graphVersion: graphVersion, subscribers: map[chan Snapshot]bool{}, vehicle: Simulator{Simulated: true, Status: "idle"}}, nil
+	engine := NewEngine(m)
+	engine.Reset(time.Now().UTC(), "service-start")
+	// A restart invalidates previous clearance evidence and receives a fresh
+	// graph version, even when no camera has reconnected yet.
+	if _, err := s.Commit(nil, []Pending{{"occupancy", engine.Snapshot()}}); err != nil {
+		return nil, err
+	}
+	graphVersion++
+	return &Service{engine: engine, store: s, routeVersion: routeVersion, graphVersion: graphVersion, subscribers: map[chan Snapshot]bool{}, vehicle: Simulator{Simulated: true, Status: "idle"}}, nil
 }
 func (s *Service) Map() Map { s.mu.Lock(); defer s.mu.Unlock(); return s.engine.Map }
 func (s *Service) snapshot() Snapshot {
@@ -126,6 +134,16 @@ func (s *Service) plan(e Engine, m Mission, version int64, reason, cause string)
 	r.GraphVersion = version
 	r.Reason = reason
 	r.Cause = cause
+	oldStates, newStates := s.engine.EdgeStates(), e.EdgeStates()
+	for _, edge := range e.Map.Edges {
+		if oldStates[edge.ID] != newStates[edge.ID] {
+			r.Changes = append(r.Changes, EdgeChange{EdgeID: edge.ID, Before: oldStates[edge.ID], After: newStates[edge.ID]})
+			r.Reason += fmt.Sprintf("; aisle %s: %s → %s", edge.ID, oldStates[edge.ID], newStates[edge.ID])
+		}
+	}
+	if s.route != nil {
+		r.PreviousEdges = append([]string{}, s.route.Edges...)
+	}
 	if s.vehicle.Progress > 0 {
 		r.Reason += "; simulated vehicle reset to last reached waypoint"
 	}

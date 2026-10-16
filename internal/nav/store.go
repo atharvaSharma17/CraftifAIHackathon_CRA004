@@ -3,10 +3,13 @@ package nav
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	_ "modernc.org/sqlite"
 	"time"
 )
+
+var ErrConflict = errors.New("observation conflict")
 
 type Store struct{ db *sql.DB }
 
@@ -33,7 +36,7 @@ func (s *Store) Check(o Observation) error {
 		return err
 	}
 	if count > 0 {
-		return fmt.Errorf("duplicate event")
+		return fmt.Errorf("%w: duplicate event", ErrConflict)
 	}
 	var frame, ts int64
 	var active int
@@ -45,7 +48,7 @@ func (s *Store) Check(o Observation) error {
 		return err
 	}
 	if active == 0 || o.FrameIndex <= frame || o.VideoTSMS <= ts {
-		return fmt.Errorf("retired session or out-of-order frame/timestamp")
+		return fmt.Errorf("%w: retired session or out-of-order frame/timestamp", ErrConflict)
 	}
 	return nil
 }

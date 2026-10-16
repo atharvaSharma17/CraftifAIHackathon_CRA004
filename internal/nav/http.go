@@ -3,6 +3,7 @@ package nav
 import (
 	"crypto/subtle"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -139,7 +140,11 @@ func (s *Service) IngestHandler(token string) http.Handler {
 			return
 		}
 		if err := s.Ingest(o, time.Now()); err != nil {
-			JSON(w, 409, map[string]string{"error": err.Error()})
+			if errors.Is(err, ErrConflict) {
+				JSON(w, 409, map[string]string{"error": err.Error()})
+			} else {
+				JSON(w, 500, map[string]string{"error": "observation could not be committed"})
+			}
 			return
 		}
 		JSON(w, 202, map[string]string{"event_id": o.EventID, "status": "accepted"})

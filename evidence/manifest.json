@@ -1,0 +1,22 @@
+{
+  "status": "pending-real-pipegen-run",
+  "claim": "Local application foundation only; no measured GPU or inference results yet",
+  "pipegen_version": null,
+  "model": null,
+  "precision": null,
+  "input_dimensions": null,
+  "artifacts": {
+    "requirement_stage": null,
+    "pipeline_ir_stage": null,
+    "model_stage": null,
+    "compiler_stage": null,
+    "run_stage": null,
+    "tensorrt_engine": null,
+    "speed_report": null,
+    "gpu_execution_log": null,
+    "real_metadata_sample": null,
+    "verified_calibration": null,
+    "causal_route_trace": null
+  },
+  "measured_results": null
+}

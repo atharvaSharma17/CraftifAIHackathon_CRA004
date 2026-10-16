@@ -1,6 +1,7 @@
 package nav
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -8,19 +9,52 @@ import (
 	"time"
 )
 
-type Dimensions [2]int
-func (v *Dimensions) UnmarshalJSON(b []byte) error {
- var values []int
- if err := json.Unmarshal(b, &values); err != nil { return err }
- if len(values) != 2 { return fmt.Errorf("image_size must contain exactly two integers") }
- copy(v[:], values); return nil
+func requiredJSONFields(b []byte, fields ...string) error {
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	for _, field := range fields {
+		value, ok := raw[field]
+		if !ok || bytes.Equal(bytes.TrimSpace(value), []byte("null")) {
+			return fmt.Errorf("required field %s is missing or null", field)
+		}
+	}
+	return nil
 }
+
+type Dimensions [2]int
+
+func (v *Dimensions) UnmarshalJSON(b []byte) error {
+	if bytes.Contains(b, []byte("null")) {
+		return fmt.Errorf("image_size elements must be integers")
+	}
+	var values []int
+	if err := json.Unmarshal(b, &values); err != nil {
+		return err
+	}
+	if len(values) != 2 {
+		return fmt.Errorf("image_size must contain exactly two integers")
+	}
+	copy(v[:], values)
+	return nil
+}
+
 type Box [4]float64
+
 func (v *Box) UnmarshalJSON(b []byte) error {
- var values []float64
- if err := json.Unmarshal(b, &values); err != nil { return err }
- if len(values) != 4 { return fmt.Errorf("bbox_xywh_px must contain exactly four numbers") }
- copy(v[:], values); return nil
+	if bytes.Contains(b, []byte("null")) {
+		return fmt.Errorf("bounding box elements must be numbers")
+	}
+	var values []float64
+	if err := json.Unmarshal(b, &values); err != nil {
+		return err
+	}
+	if len(values) != 4 {
+		return fmt.Errorf("bbox_xywh_px must contain exactly four numbers")
+	}
+	copy(v[:], values)
+	return nil
 }
 
 type Node struct {
@@ -139,22 +173,41 @@ func (m Map) Validate() error {
 // Frame observations include an empty objects array for a successfully inferred
 // clear frame. Silence is never interpreted as evidence of a clear aisle.
 type Object struct {
-	TrackID    string     `json:"track_id,omitempty"`
-	ClassLabel string     `json:"class_label"`
-	Confidence float64    `json:"confidence"`
-	BBox       Box        `json:"bbox_xywh_px"`
+	TrackID    string  `json:"track_id,omitempty"`
+	ClassLabel string  `json:"class_label"`
+	Confidence float64 `json:"confidence"`
+	BBox       Box     `json:"bbox_xywh_px"`
 }
 type Observation struct {
-	SchemaVersion      string   `json:"schema_version"`
-	EventID            string   `json:"event_id"`
-	Source             string   `json:"source"`
-	CameraID           string   `json:"camera_id"`
-	SessionID          string   `json:"session_id"`
-	FrameIndex         int64    `json:"frame_index"`
-	VideoTSMS          int64    `json:"video_ts_ms"`
+	SchemaVersion      string     `json:"schema_version"`
+	EventID            string     `json:"event_id"`
+	Source             string     `json:"source"`
+	CameraID           string     `json:"camera_id"`
+	SessionID          string     `json:"session_id"`
+	FrameIndex         int64      `json:"frame_index"`
+	VideoTSMS          int64      `json:"video_ts_ms"`
 	ImageSize          Dimensions `json:"image_size"`
-	CalibrationVersion string   `json:"calibration_version"`
-	Objects            []Object `json:"objects"`
+	CalibrationVersion string     `json:"calibration_version"`
+	Objects            []Object   `json:"objects"`
+}
+
+func (o *Object) UnmarshalJSON(b []byte) error {
+	if err := requiredJSONFields(b, "class_label", "confidence", "bbox_xywh_px"); err != nil {
+		return err
+	}
+	type plain Object
+	d := json.NewDecoder(bytes.NewReader(b))
+	d.DisallowUnknownFields()
+	return d.Decode((*plain)(o))
+}
+func (o *Observation) UnmarshalJSON(b []byte) error {
+	if err := requiredJSONFields(b, "schema_version", "event_id", "source", "camera_id", "session_id", "frame_index", "video_ts_ms", "image_size", "calibration_version", "objects"); err != nil {
+		return err
+	}
+	type plain Observation
+	d := json.NewDecoder(bytes.NewReader(b))
+	d.DisallowUnknownFields()
+	return d.Decode((*plain)(o))
 }
 
 func (o Observation) Validate(m Map) error {
@@ -185,18 +238,25 @@ type Mission struct {
 	ProfileID string `json:"vehicle_profile_id"`
 }
 type Route struct {
-	Version      int64    `json:"route_version"`
-	GraphVersion int64    `json:"graph_version"`
-	MissionID    string   `json:"mission_id"`
-	Nodes        []string `json:"nodes"`
-	Edges        []string `json:"edges"`
-	Distance     float64  `json:"distance"`
-	Cost         float64  `json:"cost"`
-	ETA          float64  `json:"eta_seconds"`
-	Status       string   `json:"status"`
-	Reason       string   `json:"reason"`
-	Cause        string   `json:"causal_event_id"`
-	Simulated    bool     `json:"simulated"`
+	Version       int64        `json:"route_version"`
+	GraphVersion  int64        `json:"graph_version"`
+	MissionID     string       `json:"mission_id"`
+	Nodes         []string     `json:"nodes"`
+	Edges         []string     `json:"edges"`
+	Distance      float64      `json:"distance"`
+	Cost          float64      `json:"cost"`
+	ETA           float64      `json:"eta_seconds"`
+	Status        string       `json:"status"`
+	Reason        string       `json:"reason"`
+	Cause         string       `json:"causal_event_id"`
+	Simulated     bool         `json:"simulated"`
+	PreviousEdges []string     `json:"previous_edges,omitempty"`
+	Changes       []EdgeChange `json:"edge_changes,omitempty"`
+}
+type EdgeChange struct {
+	EdgeID string `json:"edge_id"`
+	Before string `json:"before"`
+	After  string `json:"after"`
 }
 type Event struct {
 	ID        int64           `json:"id"`

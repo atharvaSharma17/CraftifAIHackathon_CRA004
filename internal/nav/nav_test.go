@@ -282,3 +282,69 @@ func TestFailedCommitDoesNotMutateLiveState(t *testing.T) {
 		t.Fatal("failed persistence mutated live state")
 	}
 }
+
+func TestStrictFrameContract(t *testing.T) {
+	m := testMap(t)
+	o := frame(m, 0, 0, true)
+	valid, _ := json.Marshal(o)
+	cases := []string{
+		strings.Replace(string(valid), `"frame_index":0,`, "", 1),
+		strings.Replace(string(valid), `"video_ts_ms":0`, `"video_ts_ms":null`, 1),
+		strings.Replace(string(valid), `"confidence":0.95,`, "", 1),
+		strings.Replace(string(valid), `"confidence":0.95`, `"confidence":null`, 1),
+		strings.Replace(string(valid), `"image_size":[1280,720]`, `"image_size":[1280,720,1]`, 1),
+		strings.Replace(string(valid), `[350,250,80,200]`, `[null,250,80,200]`, 1),
+		strings.Replace(string(valid), `[350,250,80,200]`, `[350,250,80,200,1]`, 1),
+		strings.Replace(string(valid), `"class_label":"person"`, `"class_label":"person","untrusted_roi":"aisle_BC"`, 1),
+	}
+	for _, raw := range cases {
+		var decoded Observation
+		if err := json.Unmarshal([]byte(raw), &decoded); err == nil {
+			t.Errorf("accepted malformed contract: %s", raw)
+		}
+	}
+}
+
+func TestSlowSubscriberAndSimulator(t *testing.T) {
+	m := testMap(t)
+	s, _ := newTestService(t, m)
+	ch, cancel := s.Subscribe()
+	defer cancel()
+	if err := s.StartMission(Mission{Start: "A", Goal: "G", ProfileID: "forklift"}); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now()
+	for i := 0; i < 20; i++ {
+		if err := s.Tick(now.Add(time.Duration(i)*time.Second), 1); err != nil {
+			t.Fatal(err)
+		}
+	}
+	snap := <-ch
+	if snap.Vehicle.X <= 80 || snap.Vehicle.Simulated != true || snap.Vehicle.Node == "A" {
+		t.Fatalf("simulator did not follow route: %+v", snap.Vehicle)
+	}
+	if len(ch) != 0 {
+		t.Fatal("subscriber buffered stale snapshots")
+	}
+}
+
+func TestGapResetsConsecutiveEvidence(t *testing.T) {
+	m := testMap(t)
+	s, _ := newTestService(t, m)
+	now := time.Now()
+	for _, o := range []Observation{frame(m, 0, 0, true), frame(m, 1, 250, true), frame(m, 9, 500, true)} {
+		if err := s.Ingest(o, now); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if s.Snapshot().Occupancy[0].EvidenceFrames != 1 || s.Snapshot().EdgeStates["B-C"] != "UNKNOWN" {
+		t.Fatal("frame gap retained consecutive hits")
+	}
+	o := frame(m, 10, 3000, true)
+	if err := s.Ingest(o, now); err != nil {
+		t.Fatal(err)
+	}
+	if s.Snapshot().Occupancy[0].EvidenceFrames != 1 {
+		t.Fatal("video gap retained temporal evidence")
+	}
+}

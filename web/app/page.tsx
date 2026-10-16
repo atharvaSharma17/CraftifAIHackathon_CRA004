@@ -16,9 +16,9 @@ export default function Dashboard(){
  const [map,setMap]=useState<Warehouse|null>(null),[state,setState]=useState<Snapshot|null>(null),[events,setEvents]=useState<LogEvent[]>([]);
  const [connection,setConnection]=useState('connecting'),[error,setError]=useState(''),[start,setStart]=useState('A'),[goal,setGoal]=useState('G'),[pending,setPending]=useState(false),[videoURL,setVideoURL]=useState('');
  const videoRef=useRef<HTMLVideoElement>(null);
- useEffect(()=>{let alive=true;const stream=new EventSource('/api/stream');stream.addEventListener('state',(event)=>{if(alive){setState(JSON.parse((event as MessageEvent).data));setConnection('connected');setError('')}});stream.onerror=()=>{if(alive)setConnection('reconnecting')};
-  read<Warehouse>('/api/map').then(m=>{if(alive)setMap(m)}).catch(e=>{if(alive)setError(`Backend unavailable. ${e.message}`)});
-  const load=()=>read<LogEvent[]>('/api/events?limit=60').then(e=>{if(alive)setEvents(e)}).catch(()=>{});load();const timer=setInterval(load,3000);
+ useEffect(()=>{let alive=true;let mapLoaded=false;const stream=new EventSource('/api/stream');stream.addEventListener('state',(event)=>{if(alive){setState(JSON.parse((event as MessageEvent).data));setConnection('connected')}});stream.onerror=()=>{if(alive)setConnection('reconnecting')};
+  const load=()=>{if(!mapLoaded)read<Warehouse>('/api/map').then(m=>{if(alive){setMap(m);mapLoaded=true;setError('')}}).catch(e=>{if(alive)setError(`Backend unavailable. ${e.message}`)});
+   return read<LogEvent[]>('/api/events?limit=60').then(e=>{if(alive)setEvents(e)}).catch(()=>{});};load();const timer=setInterval(load,3000);
   return()=>{alive=false;stream.close();clearInterval(timer)};
  },[]);
  useEffect(()=>()=>{if(videoURL)URL.revokeObjectURL(videoURL)},[videoURL]);
