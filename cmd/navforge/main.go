@@ -5,6 +5,7 @@ import (
 	"flag"
 	"log"
 	"navforge/internal/nav"
+	"navforge/internal/pipegen"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,6 +17,12 @@ import (
 func main() {
 	config := flag.String("config", "configs/warehouse.json", "warehouse map and occupancy policy")
 	dbPath := flag.String("db", "data/navforge.db", "SQLite event store")
+	metadata := flag.String("pipegen-metadata", "", "PipeGen metadata.json to replay or follow")
+	follow := flag.Bool("pipegen-follow", false, "follow a fresh, growing PipeGen JSON export")
+	speed := flag.Float64("pipegen-speed", 1, "metadata playback speed; 0 imports without pacing")
+	session := flag.String("pipegen-session", "", "input session ID; defaults to a fresh random ID")
+	container := flag.String("pipegen-container", "", "optional Docker container holding the growing metadata file")
+	video := flag.String("video", "", "optional local MP4 served to the dashboard")
 	flag.Parse()
 	m, err := nav.LoadMap(*config)
 	if err != nil {
@@ -38,7 +45,26 @@ func main() {
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
-	api := &http.Server{Addr: "127.0.0.1:8080", Handler: service.PublicHandler(), ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 << 10}
+	handler := service.PublicHandler()
+	if *video != "" {
+		path, e := filepath.Abs(*video)
+		if e != nil {
+			log.Fatal(e)
+		}
+		info, e := os.Stat(path)
+		if e != nil || info.IsDir() {
+			log.Fatalf("video must be an existing file: %s", path)
+		}
+		mux := http.NewServeMux()
+		mux.HandleFunc("GET /api/video", func(w http.ResponseWriter, r *http.Request) {
+			// Recordings can change between runs; never combine cached byte ranges.
+			w.Header().Set("Cache-Control", "no-store")
+			http.ServeFile(w, r, path)
+		})
+		mux.Handle("/", handler)
+		handler = mux
+	}
+	api := &http.Server{Addr: "127.0.0.1:8080", Handler: handler, ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 60 * time.Second, MaxHeaderBytes: 16 << 10}
 	servers := []*http.Server{api}
 	token := os.Getenv("NAVFORGE_INGEST_TOKEN")
 	if len(token) >= 24 {
@@ -54,6 +80,30 @@ func main() {
 				stop()
 			}
 		}()
+	}
+	inputDone := make(chan struct{})
+	if *metadata != "" {
+		mode := "replay"
+		if *follow {
+			mode = "live"
+		}
+		service.SetInputStatus(mode, "reading", "")
+		go func() {
+			defer close(inputDone)
+			err := pipegen.Run(ctx, m, pipegen.Options{Path: *metadata, Container: *container, Follow: *follow, Speed: *speed, Session: *session}, func(o nav.Observation) error { return service.Ingest(o, time.Now().UTC()) })
+			if ctx.Err() != nil {
+				return
+			}
+			if err != nil {
+				log.Printf("PipeGen input failed: %v", err)
+				service.SetInputStatus(mode, "failed", err.Error())
+			} else {
+				log.Print("PipeGen input complete")
+				service.SetInputStatus(mode, "complete", "")
+			}
+		}()
+	} else {
+		close(inputDone)
 	}
 	ticker := time.NewTicker(250 * time.Millisecond)
 	defer ticker.Stop()
@@ -75,6 +125,7 @@ func main() {
 				server.Shutdown(shutdown)
 			}
 			cancel()
+			<-inputDone
 			return
 		}
 	}

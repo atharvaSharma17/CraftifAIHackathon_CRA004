@@ -1,0 +1,34 @@
+[run.sh] encoder: x264enc (software) @ 8000kbit/s — no /dev/v4l2-nvenc
+[run.sh] JSON -> /home/atharva/.pipegen/atharva17asm/aaabc6c7-d6fc-47c5-906d-e2d4d3155266/output/metadata.json
+make: Entering directory '/home/atharva/.pipegen/atharva17asm/aaabc6c7-d6fc-47c5-906d-e2d4d3155266/pipeline/deepstream/parsers'
+make: Nothing to be done for 'all'.
+make: Leaving directory '/home/atharva/.pipegen/atharva17asm/aaabc6c7-d6fc-47c5-906d-e2d4d3155266/pipeline/deepstream/parsers'
+Setting pipeline to PAUSED ...
+gstnvtracker: Loading low-level lib at /opt/nvidia/deepstream/deepstream/lib/libnvds_nvmultiobjecttracker.so
+[NvMultiObjectTracker] Initialized
+0:00:00.663458964 [36m  899[00m 0x5ed6173a3240 [36mINFO   [00m [00m    nvinfer_backport gstnvinfer.cpp:684:gst_nvinfer_backport_logger:<nvinferbackport0>[00m NvDsInferContext[UID 1]: Info from NvDsInferContextImpl::deserializeEngineAndBackend() <nvdsinfer_context_impl.cpp:2161> [UID = 1]: deserialized trt engine from :/home/atharva/.pipegen/atharva17asm/aaabc6c7-d6fc-47c5-906d-e2d4d3155266/model_stage/yolov8n.fp16.plan
+0:00:00.663607529 [36m  899[00m 0x5ed6173a3240 [36mINFO   [00m [00m    nvinfer_backport gstnvinfer.cpp:684:gst_nvinfer_backport_logger:<nvinferbackport0>[00m NvDsInferContext[UID 1]: Info from NvDsInferContextImpl::generateBackendContext() <nvdsinfer_context_impl.cpp:2264> [UID = 1]: Use deserialized engine model: /home/atharva/.pipegen/atharva17asm/aaabc6c7-d6fc-47c5-906d-e2d4d3155266/model_stage/yolov8n.fp16.plan
+0:00:00.721891364 [36m  899[00m 0x5ed6173a3240 [36mINFO   [00m [00m    nvinfer_backport gstnvinfer_impl.cpp:343:notifyLoadModelStatus:<nvinferbackport0>[00m [UID 1]: Load new model:/home/atharva/.pipegen/atharva17asm/aaabc6c7-d6fc-47c5-906d-e2d4d3155266/pipeline/deepstream/configs/config_det_pgie.txt sucessfully
+Implicit layer support has been deprecated
+INFO: [Implicit Engine Info]: layers num: 0
+
+Pipeline is PREROLLING ...
+Failed to query video capabilities: Inappropriate ioctl for device
+Redistribute latency...
+[YOLOv8n-det] first call: layer=output0 numDims=2 networkInput=640x640 numClasses=80 outputs=1
+  d[0] = 84
+  d[1] = 8400
+[meta_json] file -> /home/atharva/.pipegen/atharva17asm/aaabc6c7-d6fc-47c5-906d-e2d4d3155266/output/metadata.json
+Pipeline is PREROLLED ...
+Setting pipeline to PLAYING ...
+Redistribute latency...
+New clock: GstSystemClock
+Redistribute latency...
+nvstreammux: Successfully handled EOS for source_id=0
+Got EOS from element "pipeline0".
+EOS received - stopping pipeline...
+Execution ended after 0:00:19.794854827
+Setting pipeline to NULL ...
+Freeing pipeline ...
+[NvMultiObjectTracker] De-initialized
+[meta_json] 1254 frames, 0 objects

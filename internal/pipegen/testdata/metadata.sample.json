@@ -1,0 +1,148 @@
+{
+    "pipeline":  "video_json_export",
+    "source":  "",
+    "min_confidence":  0.000,
+    "frames":  [
+                   {
+                       "frame":  0,
+                       "source_id":  0,
+                       "pts_ns":  0,
+                       "width":  1920,
+                       "height":  1080,
+                       "objects":  [
+
+                                   ]
+                   },
+                   {
+                       "frame":  3,
+                       "source_id":  0,
+                       "pts_ns":  125000000,
+                       "width":  1920,
+                       "height":  1080,
+                       "objects":  [
+                                       {
+                                           "id":  0,
+                                           "class_id":  0,
+                                           "label":  "forklift",
+                                           "confidence":  0.3898,
+                                           "bbox":  {
+                                                        "left":  81.4,
+                                                        "top":  0.0,
+                                                        "width":  1831.5,
+                                                        "height":  1074.7
+                                                    },
+                                           "tracker_confidence":  0.9608
+                                       }
+                                   ]
+                   },
+                   {
+                       "frame":  4,
+                       "source_id":  0,
+                       "pts_ns":  166666666,
+                       "width":  1920,
+                       "height":  1080,
+                       "objects":  [
+                                       {
+                                           "id":  0,
+                                           "class_id":  0,
+                                           "label":  "forklift",
+                                           "confidence":  0.3450,
+                                           "bbox":  {
+                                                        "left":  83.3,
+                                                        "top":  0.0,
+                                                        "width":  1829.8,
+                                                        "height":  1071.3
+                                                    },
+                                           "tracker_confidence":  0.9715
+                                       }
+                                   ]
+                   },
+                   {
+                       "frame":  1253,
+                       "source_id":  0,
+                       "pts_ns":  52208333333,
+                       "width":  1920,
+                       "height":  1080,
+                       "objects":  [
+                                       {
+                                           "id":  6,
+                                           "class_id":  0,
+                                           "label":  "forklift",
+                                           "confidence":  0.2912,
+                                           "bbox":  {
+                                                        "left":  11.4,
+                                                        "top":  0.0,
+                                                        "width":  1905.1,
+                                                        "height":  1077.3
+                                                    },
+                                           "tracker_confidence":  0.6982
+                                       },
+                                       {
+                                           "id":  7,
+                                           "class_id":  0,
+                                           "label":  "forklift",
+                                           "confidence":  0.2775,
+                                           "bbox":  {
+                                                        "left":  242.8,
+                                                        "top":  7.1,
+                                                        "width":  1677.2,
+                                                        "height":  1059.6
+                                                    },
+                                           "tracker_confidence":  0.6078
+                                       },
+                                       {
+                                           "id":  3,
+                                           "class_id":  0,
+                                           "label":  "forklift",
+                                           "confidence":  0.7143,
+                                           "bbox":  {
+                                                        "left":  182.6,
+                                                        "top":  8.7,
+                                                        "width":  1734.9,
+                                                        "height":  1069.0
+                                                    },
+                                           "tracker_confidence":  0.5789
+                                       },
+                                       {
+                                           "id":  5,
+                                           "class_id":  0,
+                                           "label":  "forklift",
+                                           "confidence":  0.7525,
+                                           "bbox":  {
+                                                        "left":  182.5,
+                                                        "top":  12.3,
+                                                        "width":  1734.5,
+                                                        "height":  1067.7
+                                                    },
+                                           "tracker_confidence":  0.5800
+                                       },
+                                       {
+                                           "id":  0,
+                                           "class_id":  0,
+                                           "label":  "forklift",
+                                           "confidence":  0.5392,
+                                           "bbox":  {
+                                                        "left":  258.4,
+                                                        "top":  8.0,
+                                                        "width":  1661.6,
+                                                        "height":  1071.0
+                                                    },
+                                           "tracker_confidence":  0.6424
+                                       },
+                                       {
+                                           "id":  2,
+                                           "class_id":  0,
+                                           "label":  "forklift",
+                                           "confidence":  0.4531,
+                                           "bbox":  {
+                                                        "left":  347.4,
+                                                        "top":  0.0,
+                                                        "width":  1572.6,
+                                                        "height":  1068.4
+                                                    },
+                                           "tracker_confidence":  0.3191
+                                       }
+                                   ]
+                   }
+               ]
+}

@@ -1,0 +1,526 @@
+{
+  "loop": {
+    "next_file": null,
+    "next_task": null,
+    "projectTree": {},
+    "target_function": {
+      "name": "read_file",
+      "parameters": {}
+    },
+    "visited_steps": [
+      "/workspace/yolov8-inference/main.py",
+      "/workspace/yolov8-inference/yolov8n.onnx"
+    ]
+  },
+  "pipeline_ir": {
+    "connections": [
+      [
+        "p01o_frame",
+        "p02i_frame"
+      ],
+      [
+        "p01o_frame",
+        "p06i_frame"
+      ],
+      [
+        "p01o_source_meta",
+        "p05i_source_meta"
+      ],
+      [
+        "p02o_tensor",
+        "p03i_tensor"
+      ],
+      [
+        "p02o_geometry",
+        "p04i_geometry"
+      ],
+      [
+        "p03o_raw",
+        "p04i_raw"
+      ],
+      [
+        "p03o_timing",
+        "p04i_timing"
+      ],
+      [
+        "p04o_detections",
+        "p05i_detections"
+      ],
+      [
+        "p05o_tracks",
+        "p06i_tracks"
+      ],
+      [
+        "p05o_tracks",
+        "p07i_tracks"
+      ]
+    ],
+    "nodes": [
+      {
+        "description": "Read every warehouse frame and its source timing.",
+        "id": 1,
+        "name": "file",
+        "ports": [
+          {
+            "direction": "output",
+            "format": {
+              "color": "BGR",
+              "encoding": "raw"
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p01o_frame",
+            "tensor": {
+              "dtype": "uint8",
+              "shape": [
+                1080,
+                1920,
+                3
+              ]
+            }
+          },
+          {
+            "direction": "output",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p01o_source_meta",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          }
+        ],
+        "pseudo_code": "import cv2\ncap = cv2.VideoCapture('/workspace/Camera1.mp4')\nif not cap.isOpened():\n    raise RuntimeError('Cannot open warehouse video')\nindex = 0\nsource_fps = cap.get(cv2.CAP_PROP_FPS)\nif source_fps <= 0:\n    source_fps = 24.0\nwhile True:\n    ok, frame = cap.read()\n    if not ok:\n        break\n    pts_ms = cap.get(cv2.CAP_PROP_POS_MSEC)\n    timestamp_s = pts_ms / 1000.0 if pts_ms > 0 or index == 0 else index / source_fps\n    source_meta = {'frame_index': index, 'timestamp_s': float(timestamp_s), 'source_fps': float(source_fps), 'width': int(frame.shape[1]), 'height': int(frame.shape[0])}\n    emit(p01o_frame=frame, p01o_source_meta=source_meta)\n    index += 1\ncap.release()",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "type": "input",
+        "url": "file:///workspace/Camera1.mp4"
+      },
+      {
+        "color_order": "RGB",
+        "description": "Letterbox person-detection frames and create normalized RGB tensors.",
+        "id": 2,
+        "mean": null,
+        "normalization": 0.00392156862745098,
+        "offset": null,
+        "pad_value": 114,
+        "ports": [
+          {
+            "direction": "input",
+            "format": {
+              "color": "BGR",
+              "encoding": "raw"
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p02i_frame",
+            "tensor": {
+              "dtype": "uint8",
+              "shape": [
+                1080,
+                1920,
+                3
+              ]
+            }
+          },
+          {
+            "direction": "output",
+            "format": {
+              "color": "RGB",
+              "encoding": "raw"
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p02o_tensor",
+            "tensor": {
+              "dtype": "fp32",
+              "shape": [
+                1,
+                3,
+                640,
+                640
+              ]
+            }
+          },
+          {
+            "direction": "output",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p02o_geometry",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          }
+        ],
+        "pseudo_code": "import cv2\nimport numpy as np\n\ndef process(frame):\n    img_height, img_width = frame.shape[:2]\n    img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)\n    new_shape = (640, 640)\n    shape = img.shape[:2]\n    r = min(new_shape[0] / shape[0], new_shape[1] / shape[1])\n    new_unpad = (round(shape[1] * r), round(shape[0] * r))\n    dw, dh = (new_shape[1] - new_unpad[0]) / 2, (new_shape[0] - new_unpad[1]) / 2\n    if shape[::-1] != new_unpad:\n        img = cv2.resize(img, new_unpad, interpolation=cv2.INTER_LINEAR)\n    top, bottom = round(dh - 0.1), round(dh + 0.1)\n    left, right = round(dw - 0.1), round(dw + 0.1)\n    img = cv2.copyMakeBorder(img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(114, 114, 114))\n    image_data = np.array(img) / 255.0\n    image_data = np.transpose(image_data, (2, 0, 1))\n    image_data = image_data[None].astype(np.float32)\n    geometry = {'img_height': int(img_height), 'img_width': int(img_width), 'pad_top': int(top), 'pad_left': int(left), 'input_height': 640, 'input_width': 640}\n    return image_data, geometry",
+        "resize": [
+          640,
+          640
+        ],
+        "resize_mode": "letterbox",
+        "scale": 0.00392156862745098,
+        "std": null,
+        "type": "preprocess"
+      },
+      {
+        "batchSize": 1,
+        "description": "Run YOLOv8n through GPU TensorRT and time inference.",
+        "id": 3,
+        "layout": "NCHW",
+        "model": {
+          "inputs": [
+            {
+              "dtype": "fp32",
+              "name": "images",
+              "shape": [
+                1,
+                3,
+                640,
+                640
+              ]
+            }
+          ],
+          "name": "YOLOv8n COCO person detection",
+          "outputs": [
+            {
+              "dtype": "fp32",
+              "name": "output0",
+              "shape": [
+                1,
+                84,
+                8400
+              ]
+            }
+          ],
+          "parameter_count": 3193934,
+          "type": "engine",
+          "url": "/home/atharva/.pipegen/atharva17asm/aaabc6c7-d6fc-47c5-906d-e2d4d3155266/model_stage/yolov8n.fp16.plan",
+          "source_onnx": "/workspace/yolov8-inference/yolov8n.onnx"
+        },
+        "ports": [
+          {
+            "direction": "input",
+            "format": {
+              "color": "RGB",
+              "encoding": "raw"
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p03i_tensor",
+            "tensor": {
+              "dtype": "fp32",
+              "shape": [
+                1,
+                3,
+                640,
+                640
+              ]
+            }
+          },
+          {
+            "direction": "output",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p03o_raw",
+            "tensor": {
+              "dtype": "fp32",
+              "shape": [
+                1,
+                84,
+                8400
+              ]
+            }
+          },
+          {
+            "direction": "output",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p03o_timing",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          }
+        ],
+        "pseudo_code": "import time\nimport numpy as np\nimport tensorrt as trt\nimport pycuda.driver as cuda\nimport pycuda.autoinit\n\n# Initialize once per pipeline instance. The DeepStream primary-inference stage uses\n# this ONNX network and the same batch-one TensorRT precision and tensor contracts.\nlogger = trt.Logger(trt.Logger.WARNING)\nbuilder = trt.Builder(logger)\nnetwork = builder.create_network(1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))\nparser = trt.OnnxParser(network, logger)\nwith open('/workspace/yolov8-inference/yolov8n.onnx', 'rb') as model_file:\n    model_bytes = model_file.read()\nif not parser.parse(model_bytes):\n    raise RuntimeError('; '.join(str(parser.get_error(i)) for i in range(parser.num_errors)))\nconfig = builder.create_builder_config()\nif builder.platform_has_fast_fp16:\n    config.set_flag(trt.BuilderFlag.FP16)\nserialized_engine = builder.build_serialized_network(network, config)\nif serialized_engine is None:\n    raise RuntimeError('TensorRT engine build failed')\nruntime = trt.Runtime(logger)\nengine = runtime.deserialize_cuda_engine(serialized_engine)\ncontext = engine.create_execution_context()\nstream = cuda.Stream()\ninput_name, output_name = 'images', 'output0'\ncontext.set_input_shape(input_name, (1, 3, 640, 640))\ninput_nbytes = 1 * 3 * 640 * 640 * np.dtype(np.float32).itemsize\noutput_nbytes = 1 * 84 * 8400 * np.dtype(np.float32).itemsize\nd_input = cuda.mem_alloc(input_nbytes)\nd_output = cuda.mem_alloc(output_nbytes)\ncontext.set_tensor_address(input_name, int(d_input))\ncontext.set_tensor_address(output_name, int(d_output))\nprecision = 'fp16' if builder.platform_has_fast_fp16 else 'fp32'\n\ndef process(image_data):\n    host_input = np.ascontiguousarray(image_data, dtype=np.float32)\n    if host_input.shape != (1, 3, 640, 640):\n        raise ValueError('Unexpected YOLO input shape')\n    host_output = np.empty((1, 84, 8400), dtype=np.float32)\n    cuda.memcpy_htod_async(d_input, host_input, stream)\n    stream.synchronize()\n    start = time.perf_counter()\n    if not context.execute_async_v3(stream.handle):\n        raise RuntimeError('TensorRT inference failed')\n    stream.synchronize()\n    inference_ms = (time.perf_counter() - start) * 1000.0\n    cuda.memcpy_dtoh_async(host_output, d_output, stream)\n    stream.synchronize()\n    return host_output, {'inference_latency_ms': float(inference_ms), 'model': 'YOLOv8n COCO', 'precision': precision, 'model_input': [1, 3, 640, 640], 'model_output': [1, 84, 8400]}",
+        "type": "inference"
+      },
+      {
+        "description": "Decode YOLO boxes, suppress overlaps, and retain people.",
+        "id": 4,
+        "label_file_path": null,
+        "num_classes": 80,
+        "ports": [
+          {
+            "direction": "input",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p04i_raw",
+            "tensor": {
+              "dtype": "fp32",
+              "shape": [
+                1,
+                84,
+                8400
+              ]
+            }
+          },
+          {
+            "direction": "input",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p04i_geometry",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          },
+          {
+            "direction": "input",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p04i_timing",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          },
+          {
+            "direction": "output",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p04o_detections",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          }
+        ],
+        "pseudo_code": "import cv2\nimport numpy as np\n\ndef process(output0, geometry, timing):\n    # main.py: transpose [1,84,8400] to 8400 rows of xywh plus 80 scores.\n    outputs = np.transpose(np.squeeze(output0)).copy()\n    rows = outputs.shape[0]\n    boxes, scores, class_ids = [], [], []\n    gain = min(geometry['input_height'] / geometry['img_height'], geometry['input_width'] / geometry['img_width'])\n    outputs[:, 0] -= geometry['pad_left']\n    outputs[:, 1] -= geometry['pad_top']\n    for i in range(rows):\n        classes_scores = outputs[i][4:]\n        max_score = np.amax(classes_scores)\n        if max_score >= 0.25:\n            class_id = int(np.argmax(classes_scores))\n            x, y, w, h = outputs[i][0], outputs[i][1], outputs[i][2], outputs[i][3]\n            left = int((x - w / 2) / gain)\n            top = int((y - h / 2) / gain)\n            width = int(w / gain)\n            height = int(h / gain)\n            class_ids.append(class_id)\n            scores.append(float(max_score))\n            boxes.append([left, top, width, height])\n    indices = cv2.dnn.NMSBoxes(boxes, scores, 0.25, 0.5) if boxes else []\n    persons = []\n    for i in np.array(indices).flatten():\n        j = int(i)\n        if class_ids[j] == 0:\n            persons.append({'bbox_xywh': [int(v) for v in boxes[j]], 'confidence': scores[j], 'class_id': 0, 'label': 'person'})\n    return {'detections': persons, 'width': geometry['img_width'], 'height': geometry['img_height'], 'inference_latency_ms': timing['inference_latency_ms'], 'model': timing['model'], 'precision': timing['precision'], 'model_input': timing['model_input'], 'model_output': timing['model_output']}",
+        "task": "detection",
+        "threshold": 0.25,
+        "top_items": null,
+        "type": "postprocess"
+      },
+      {
+        "category": "tracking",
+        "description": "Associate observed people with stable IDs across frames.",
+        "external_assets": [],
+        "id": 5,
+        "inputs": [
+          "bbox",
+          "source_metadata"
+        ],
+        "name": "object tracking",
+        "outputs": [
+          "tracked_frame_metadata"
+        ],
+        "parameters": {
+          "association_iou": 0.3,
+          "max_missed_frames": 30,
+          "method": "Object tracking"
+        },
+        "placement": {
+          "attach_point": null,
+          "position": "post_nn"
+        },
+        "ports": [
+          {
+            "direction": "input",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p05i_detections",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          },
+          {
+            "direction": "input",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p05i_source_meta",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          },
+          {
+            "direction": "output",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p05o_tracks",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          }
+        ],
+        "pseudo_code": "import time\n\n# State persists for this input's entire video; it is not reset between frames.\nnext_track_id = 1\nactive = {}\nstarted_at = time.perf_counter()\nprocessed_frames = 0\n\ndef iou_xywh(a, b):\n    ax, ay, aw, ah = a\n    bx, by, bw, bh = b\n    x1, y1 = max(ax, bx), max(ay, by)\n    x2, y2 = min(ax + aw, bx + bw), min(ay + ah, by + bh)\n    intersection = max(0, x2 - x1) * max(0, y2 - y1)\n    union = max(0, aw) * max(0, ah) + max(0, bw) * max(0, bh) - intersection\n    return intersection / union if union > 0 else 0.0\n\ndef process(decoded, source_meta):\n    global next_track_id, processed_frames\n    detections = decoded['detections']\n    frame_index = source_meta['frame_index']\n    candidates = []\n    for track_id, track in active.items():\n        if frame_index - track['last_seen'] <= 30:\n            for det_index, det in enumerate(detections):\n                overlap = iou_xywh(track['bbox_xywh'], det['bbox_xywh'])\n                if overlap >= 0.3:\n                    candidates.append((overlap, track_id, det_index))\n    candidates.sort(key=lambda item: (-item[0], item[1], item[2]))\n    used_tracks, used_detections = set(), set()\n    assigned = {}\n    for overlap, track_id, det_index in candidates:\n        if track_id not in used_tracks and det_index not in used_detections:\n            assigned[det_index] = track_id\n            used_tracks.add(track_id)\n            used_detections.add(det_index)\n    observed = []\n    for det_index, det in enumerate(detections):\n        if det_index in assigned:\n            track_id = assigned[det_index]\n        else:\n            track_id = next_track_id\n            next_track_id += 1\n        active[track_id] = {'bbox_xywh': det['bbox_xywh'], 'last_seen': frame_index}\n        observed.append({'track_id': track_id, 'bbox_xywh': det['bbox_xywh'], 'confidence': det['confidence'], 'class_id': det['class_id'], 'label': det['label']})\n    for track_id in list(active):\n        if frame_index - active[track_id]['last_seen'] > 30:\n            del active[track_id]\n    processed_frames += 1\n    elapsed = max(time.perf_counter() - started_at, 1e-9)\n    return {'frame_index': frame_index, 'timestamp_s': source_meta['timestamp_s'], 'width': decoded['width'], 'height': decoded['height'], 'objects': observed, 'person_count': len(observed), 'pipeline_fps': processed_frames / elapsed, 'inference_latency_ms': decoded['inference_latency_ms'], 'model': decoded['model'], 'precision': decoded['precision'], 'model_input': decoded['model_input'], 'model_output': decoded['model_output']}",
+        "reference_path": null,
+        "runs_every_frame": true,
+        "state_key": "global",
+        "triggers": [],
+        "type": "custom"
+      },
+      {
+        "description": "Draw observed person tracks and save annotated video.",
+        "grid": null,
+        "id": 6,
+        "name": "file",
+        "output_type": "single",
+        "ports": [
+          {
+            "direction": "input",
+            "format": {
+              "color": "BGR",
+              "encoding": "raw"
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p06i_frame",
+            "tensor": {
+              "dtype": "uint8",
+              "shape": [
+                1080,
+                1920,
+                3
+              ]
+            }
+          },
+          {
+            "direction": "input",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p06i_tracks",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          }
+        ],
+        "pseudo_code": "import cv2\nimport os\n\npath = '/home/atharva/.pipegen/atharva17asm/aaabc6c7-d6fc-47c5-906d-e2d4d3155266/output/output.mp4'\nos.makedirs(os.path.dirname(path), exist_ok=True)\nwriter = cv2.VideoWriter(path, cv2.VideoWriter_fourcc(*'mp4v'), 24.0, (1920, 1080))\nif not writer.isOpened():\n    raise RuntimeError('Cannot open annotated video output')\n\ndef process(frame, tracked):\n    image = frame.copy()\n    height, width = image.shape[:2]\n    for obj in tracked['objects']:\n        x, y, w, h = obj['bbox_xywh']\n        x1, y1 = max(0, min(width - 1, x)), max(0, min(height - 1, y))\n        x2, y2 = max(0, min(width - 1, x + w)), max(0, min(height - 1, y + h))\n        if x2 <= x1 or y2 <= y1:\n            continue\n        cv2.rectangle(image, (x1, y1), (x2, y2), (0, 200, 0), 2)\n        label = f\"{obj['label']} ID {obj['track_id']}: {obj['confidence']:.2f}\"\n        cv2.putText(image, label, (x1, max(15, y1 - 8)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 200, 0), 2, cv2.LINE_AA)\n    writer.write(image)\n\n# On end of stream, close the container so the MP4 is playable.\nwriter.release()",
+        "resolution": [
+          1920,
+          1080
+        ],
+        "type": "output",
+        "url": "file:///home/atharva/.pipegen/atharva17asm/aaabc6c7-d6fc-47c5-906d-e2d4d3155266/output/output.mp4"
+      },
+      {
+        "description": "Write per-frame tracked metadata and validation-ready performance measurements.",
+        "grid": null,
+        "id": 7,
+        "name": "json",
+        "output_type": "single",
+        "ports": [
+          {
+            "direction": "input",
+            "format": {
+              "color": null,
+              "encoding": null
+            },
+            "framerate": {
+              "denominator": 1,
+              "numerator": 24
+            },
+            "id": "p07i_tracks",
+            "tensor": {
+              "dtype": null,
+              "shape": null
+            }
+          }
+        ],
+        "pseudo_code": "import json\nimport os\n\npath = '/home/atharva/.pipegen/atharva17asm/aaabc6c7-d6fc-47c5-906d-e2d4d3155266/output/metadata.json'\nos.makedirs(os.path.dirname(path), exist_ok=True)\nfile = open(path, 'w', encoding='utf-8')\nfile.write('[')\nfirst = True\n\ndef process(tracked):\n    global first\n    # Every source frame, including an empty detection frame, gets one record.\n    if not first:\n        file.write(',\\n')\n    json.dump(tracked, file, allow_nan=False)\n    file.flush()\n    first = False\n\n# At end of stream, finish the JSON array and flush it to disk.\nfile.write(']\\n')\nfile.close()",
+        "resolution": null,
+        "type": "output",
+        "url": "file:///home/atharva/.pipegen/atharva17asm/aaabc6c7-d6fc-47c5-906d-e2d4d3155266/output/metadata.json"
+      }
+    ]
+  }
+}

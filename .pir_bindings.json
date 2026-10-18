@@ -1,0 +1,16 @@
+{
+  "graph_sha256": "d97e3a1049118d8e6d8e503e0e08976010e08c2ace4ee4dbd55d6531c2b852c7",
+  "bindings": {
+    "tasks": [
+      {
+        "node_ids": [
+          2,
+          3,
+          4,
+          5
+        ],
+        "task_id": "object detection@input1"
+      }
+    ]
+  }
+}

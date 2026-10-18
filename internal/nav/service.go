@@ -7,6 +7,8 @@ import (
 )
 
 type Snapshot struct {
+	PerceptionInput     InputStatus       `json:"perception_input"`
+	LatestObservation   *Observation      `json:"latest_observation,omitempty"`
 	Occupancy           []Occupancy       `json:"occupancy"`
 	EdgeStates          map[string]string `json:"edge_states"`
 	Route               *Route            `json:"route"`
@@ -20,6 +22,8 @@ type Snapshot struct {
 	AcceptedSource      string            `json:"accepted_source"`
 }
 type Service struct {
+	input        InputStatus
+	latest       *Observation
 	mu           sync.Mutex
 	engine       *Engine
 	store        *Store
@@ -52,7 +56,20 @@ func NewService(m Map, s *Store) (*Service, error) {
 }
 func (s *Service) Map() Map { s.mu.Lock(); defer s.mu.Unlock(); return s.engine.Map }
 func (s *Service) snapshot() Snapshot {
-	return Snapshot{Occupancy: s.engine.Snapshot(), EdgeStates: s.engine.EdgeStates(), Route: s.route, Mission: s.mission, Vehicle: s.vehicle, PerceptionConnected: s.engine.Connected(), CalibrationVerified: s.engine.Map.CalibrationVerified, LastFrameAt: s.engine.LastReceived, GraphVersion: s.graphVersion, ReceivedFrames: s.frames, AcceptedSource: "pipegen-deepstream"}
+	return Snapshot{PerceptionInput: s.input, LatestObservation: s.latest, Occupancy: s.engine.Snapshot(), EdgeStates: s.engine.EdgeStates(), Route: s.route, Mission: s.mission, Vehicle: s.vehicle, PerceptionConnected: s.engine.Connected(), CalibrationVerified: s.engine.Map.CalibrationVerified, LastFrameAt: s.engine.LastReceived, GraphVersion: s.graphVersion, ReceivedFrames: s.frames, AcceptedSource: "pipegen-deepstream"}
+}
+
+type InputStatus struct {
+	Mode   string `json:"mode"`
+	Status string `json:"status"`
+	Error  string `json:"error,omitempty"`
+}
+
+func (s *Service) SetInputStatus(mode, status, message string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.input = InputStatus{Mode: mode, Status: status, Error: message}
+	s.publish()
 }
 func (s *Service) Snapshot() Snapshot { s.mu.Lock(); defer s.mu.Unlock(); return s.snapshot() }
 func (s *Service) publish() {
@@ -119,6 +136,7 @@ func (s *Service) Ingest(o Observation, now time.Time) error {
 	s.engine = &clone
 	s.graphVersion = version
 	s.frames++
+	s.latest = &o
 	if route != nil {
 		s.setRoute(route)
 	}

@@ -179,6 +179,7 @@ type Object struct {
 	BBox       Box     `json:"bbox_xywh_px"`
 }
 type Observation struct {
+	InputMode          string     `json:"input_mode,omitempty"`
 	SchemaVersion      string     `json:"schema_version"`
 	EventID            string     `json:"event_id"`
 	Source             string     `json:"source"`
@@ -211,6 +212,9 @@ func (o *Observation) UnmarshalJSON(b []byte) error {
 }
 
 func (o Observation) Validate(m Map) error {
+	if o.InputMode != "" && o.InputMode != "replay" && o.InputMode != "live" {
+		return fmt.Errorf("invalid input_mode")
+	}
 	if o.SchemaVersion != "1.0" || o.EventID == "" || len(o.EventID) > 200 || o.SessionID == "" || len(o.SessionID) > 100 || o.Source != "pipegen-deepstream" || o.CameraID != m.CameraID || o.ImageSize != m.ImageSize || o.CalibrationVersion != m.CalibrationVersion || o.FrameIndex < 0 || o.VideoTSMS < 0 || o.Objects == nil || len(o.Objects) > 256 {
 		return fmt.Errorf("invalid frame contract or calibration metadata")
 	}

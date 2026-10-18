@@ -1,0 +1,160 @@
+{
+    "id":  "warehouse-01",
+    "calibration_version":  "pipegen-1920x1080-unverified-v1",
+    "camera_id":  "cam01",
+    "image_size":  [
+                       1920,
+                       1080
+                   ],
+    "calibration_verified":  false,
+    "nodes":  [
+                  {
+                      "id":  "A",
+                      "x":  80,
+                      "y":  300,
+                      "label":  "Dispatch"
+                  },
+                  {
+                      "id":  "B",
+                      "x":  280,
+                      "y":  300,
+                      "label":  "West junction"
+                  },
+                  {
+                      "id":  "C",
+                      "x":  520,
+                      "y":  300,
+                      "label":  "East junction"
+                  },
+                  {
+                      "id":  "G",
+                      "x":  740,
+                      "y":  300,
+                      "label":  "Receiving"
+                  },
+                  {
+                      "id":  "D",
+                      "x":  280,
+                      "y":  100,
+                      "label":  "North west"
+                  },
+                  {
+                      "id":  "E",
+                      "x":  520,
+                      "y":  100,
+                      "label":  "North east"
+                  }
+              ],
+    "edges":  [
+                  {
+                      "id":  "A-B",
+                      "from":  "A",
+                      "to":  "B",
+                      "length":  10,
+                      "width":  2.8,
+                      "speed_limit":  1.5,
+                      "bidirectional":  true,
+                      "turn_penalty":  0
+                  },
+                  {
+                      "id":  "B-C",
+                      "from":  "B",
+                      "to":  "C",
+                      "length":  12,
+                      "width":  2.8,
+                      "speed_limit":  1.5,
+                      "bidirectional":  true,
+                      "turn_penalty":  0
+                  },
+                  {
+                      "id":  "C-G",
+                      "from":  "C",
+                      "to":  "G",
+                      "length":  11,
+                      "width":  2.8,
+                      "speed_limit":  1.5,
+                      "bidirectional":  true,
+                      "turn_penalty":  0
+                  },
+                  {
+                      "id":  "B-D",
+                      "from":  "B",
+                      "to":  "D",
+                      "length":  10,
+                      "width":  2.8,
+                      "speed_limit":  1,
+                      "bidirectional":  true,
+                      "turn_penalty":  2
+                  },
+                  {
+                      "id":  "D-E",
+                      "from":  "D",
+                      "to":  "E",
+                      "length":  12,
+                      "width":  2.8,
+                      "speed_limit":  1,
+                      "bidirectional":  true,
+                      "turn_penalty":  0
+                  },
+                  {
+                      "id":  "E-C",
+                      "from":  "E",
+                      "to":  "C",
+                      "length":  10,
+                      "width":  2.8,
+                      "speed_limit":  1,
+                      "bidirectional":  true,
+                      "turn_penalty":  2
+                  }
+              ],
+    "rois":  [
+                 {
+                     "id":  "aisle_BC",
+                     "edge_ids":  [
+                                      "B-C"
+                                  ],
+                     "polygon":  [
+                                     [
+                                         375,
+                                         300
+                                     ],
+                                     [
+                                         975,
+                                         300
+                                     ],
+                                     [
+                                         1200,
+                                         1050
+                                     ],
+                                     [
+                                         150,
+                                         1050
+                                     ]
+                                 ]
+                 }
+             ],
+    "vehicle_profiles":  [
+                             {
+                                 "id":  "forklift",
+                                 "width":  1.3,
+                                 "clearance":  0.3,
+                                 "speed_cap":  1,
+                                 "max_turn_penalty":  5
+                             }
+                         ],
+    "policy":  {
+                   "confidence_threshold":  0.65,
+                   "suspect_frames":  3,
+                   "block_after_ms":  500,
+                   "clearing_after_ms":  1000,
+                   "clear_after_ms":  2000,
+                   "stale_after_ms":  2000,
+                   "risk_penalty":  30,
+                   "unknown_penalty":  8,
+                   "strict_unknown":  false,
+                   "obstacle_classes":  [
+                                            "forklift",
+                                            "person"
+                                        ]
+               }
+}

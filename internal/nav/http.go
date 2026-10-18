@@ -82,7 +82,7 @@ func (s *Service) PublicHandler() http.Handler {
 			return
 		}
 		w.Header().Set("Content-Type", "text/event-stream")
-		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Cache-Control", "no-cache, no-transform")
 		w.Header().Set("X-Accel-Buffering", "no")
 		ch, cancel := s.Subscribe()
 		defer cancel()

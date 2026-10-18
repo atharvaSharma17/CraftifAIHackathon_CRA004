@@ -1,0 +1,118 @@
+{
+  "version": 1,
+  "steps": {
+    "visualize": {
+      "step": "visualize",
+      "status": "ok",
+      "summary": "235 graph nodes \u00b7 0 unresolved TensorRT node(s)",
+      "detail": "",
+      "data": {
+        "_data_file": "/home/atharva/.pipegen/atharva17asm/aaabc6c7-d6fc-47c5-906d-e2d4d3155266/model_stage/visualize.data.json"
+      },
+      "warnings": [],
+      "artifacts": {},
+      "recorded_at": 1792241767.5403736
+    },
+    "compile": {
+      "step": "compile",
+      "status": "warning",
+      "summary": "FP16 engine built in 19.2s \u2014 163 TRT layers, 7.3 MB.",
+      "detail": "**yolov8n.onnx \u2192 yolov8n.fp16.plan**  \u00b7  TensorRT 10.3.0\n\nThe engine is on disk and this is the file that gets deployed. Nothing has been run yet, so none of this is a speed measurement \u2014 the build time above is how long it took to CREATE, not how fast it goes.\n\n**Asked for FP16, but the engine is mixed:** FP16 149 \u00b7 FP32 14.\n\nTensorRT falls back when a layer has no kernel at the precision you asked for. This is the usual reason a speed-up comes in smaller than expected \u2014 the layers that fell back are still running at the slower format.\n\n**Layout conversion \u2014 43% of layers**\n\n70 of 163 layers do no maths. They only rearrange data so the next layer can read it.\n\nAround 8% is normal at FP32. What this number is really for is comparing two builds of the SAME model: a jump after a precision change is the cost of extra shuffling, not a worse choice of kernel. At 43% a large share of this engine is moving data rather than computing \u2014 worth comparing against another precision before concluding the model is simply expensive.\n\n**What the engine is made of**\n\n| Kind | Count | What it does |\n|---|---:|---|\n| Reformat | 70 | layout/precision conversion \u2014 overhead, not maths |\n| CaskConvolution | 61 | convolutions |\n| PointWiseV2 | 13 | elementwise maths, fused |\n| NoOp | 8 | removed entirely |\n| Constant | 3 | \u2014 |\n| CaskPooling | 3 | \u2014 |\n| Resize | 2 | resizing |\n| Shuffle | 2 | reshapes and transposes |\n| CaskSoftMaxV2 | 1 | \u2014 |\n\nThese are TensorRT's own kernel families, after it merged what it could \u2014 which is why the count does not match the ONNX node count.",
+      "data": {
+        "_data_file": "/home/atharva/.pipegen/atharva17asm/aaabc6c7-d6fc-47c5-906d-e2d4d3155266/model_stage/compile.data.json"
+      },
+      "warnings": [
+        "First build on this GPU, so every kernel had to be timed (19s). The timings are now cached; rebuilding this model after surgery or quantization will be far quicker."
+      ],
+      "artifacts": {
+        "engine": "/home/atharva/.pipegen/atharva17asm/aaabc6c7-d6fc-47c5-906d-e2d4d3155266/model_stage/yolov8n.fp16.plan"
+      },
+      "recorded_at": 1792241792.1152089
+    },
+    "accuracy": {
+      "step": "accuracy",
+      "status": "warning",
+      "summary": "mAP@0.5 0.9999 against the FP32 ONNX output, used as pseudo ground truth \u00b7 30 sample(s)",
+      "detail": "**mAP@0.5 0.9999 against the FP32 ONNX output, used as pseudo ground truth \u00b7 30 sample(s)**\n\n| | |\n|---|---|\n| Measured against | the FP32 ONNX output, used as pseudo ground truth |\n| Samples | 30 |\n| Engine | `yolov8n.fp16.plan` |\n| Reference | `yolov8n.onnx` (FP32 ONNX) |\n\n> No labels were available, so the FP32 ONNX output is treated as ground truth. This measures **how much compiling changed the answers**, not how good the model is \u2014 a perfect score means the engine matches the original, not that the original was right.\n\n| Metric | Engine |\n|---|---:|\n| mAP@0.5 | 0.9999 |\n| mAP@0.5:0.95 | 0.9999 |\n| Precision@0.5 | 0.9899 |\n| Recall@0.5 | 1.0000 |\n| Predictions | 99 |\n| Ground-truth objects | 98 |\n\n**What these mean**\n\n- **mAP@0.5** \u2014 Mean average precision at IoU 0.5 \u2014 the standard detection score. Charges for missed objects and for false positives, which a box-overlap average cannot.\n- **mAP@0.5:0.95** \u2014 Averaged over ten IoU thresholds from 0.5 to 0.95. Stricter: it moves when box coordinates drift, not only when detections are lost.\n- **Precision@0.5** \u2014 Of everything the model reported, how much was real.\n- **Recall@0.5** \u2014 Of everything that was there, how much it found.\n- **Predictions** \u2014 Total detections reported across the set.\n- **Ground-truth objects** \u2014 Total objects the labels contain.",
+      "data": {
+        "task": "detection",
+        "source": "pseudo",
+        "dataset_name": "Camera1.mp4 (52s)",
+        "samples": 30,
+        "engine_path": "/home/atharva/.pipegen/atharva17asm/aaabc6c7-d6fc-47c5-906d-e2d4d3155266/model_stage/yolov8n.fp16.plan",
+        "onnx_path": "/workspace/yolov8-inference/yolov8n.onnx",
+        "precision": "fp16",
+        "primary_key": "mAP50",
+        "metrics": [
+          {
+            "key": "mAP50",
+            "label": "mAP@0.5",
+            "value": 0.999871,
+            "higher_is_better": true,
+            "unit": "ratio",
+            "hint": "Mean average precision at IoU 0.5 \u2014 the standard detection score. Charges for missed objects and for false positives, which a box-overlap average cannot."
+          },
+          {
+            "key": "mAP",
+            "label": "mAP@0.5:0.95",
+            "value": 0.999871,
+            "higher_is_better": true,
+            "unit": "ratio",
+            "hint": "Averaged over ten IoU thresholds from 0.5 to 0.95. Stricter: it moves when box coordinates drift, not only when detections are lost."
+          },
+          {
+            "key": "precision",
+            "label": "Precision@0.5",
+            "value": 0.989899,
+            "higher_is_better": true,
+            "unit": "ratio",
+            "hint": "Of everything the model reported, how much was real."
+          },
+          {
+            "key": "recall",
+            "label": "Recall@0.5",
+            "value": 1.0,
+            "higher_is_better": true,
+            "unit": "ratio",
+            "hint": "Of everything that was there, how much it found."
+          },
+          {
+            "key": "n_pred",
+            "label": "Predictions",
+            "value": 99.0,
+            "higher_is_better": true,
+            "unit": "raw",
+            "hint": "Total detections reported across the set."
+          },
+          {
+            "key": "n_gt",
+            "label": "Ground-truth objects",
+            "value": 98.0,
+            "higher_is_better": true,
+            "unit": "raw",
+            "hint": "Total objects the labels contain."
+          }
+        ],
+        "baseline": [],
+        "warnings": [
+          "The frames from Camera1.mp4 are near-duplicates (closest pair differs by 0/64), so 30 samples carry about as much information as one. Use footage where the scene changes for a result worth acting on."
+        ],
+        "error": "",
+        "headline": "mAP@0.5 0.9999 against the FP32 ONNX output, used as pseudo ground truth \u00b7 30 sample(s)",
+        "primary_value": 0.999871
+      },
+      "warnings": [
+        "The frames from Camera1.mp4 are near-duplicates (closest pair differs by 0/64), so 30 samples carry about as much information as one. Use footage where the scene changes for a result worth acting on."
+      ],
+      "artifacts": {},
+      "recorded_at": 1792242175.611118
+    }
+  },
+  "constraint": {},
+  "choices": {
+    "selected_artifact": "baseline",
+    "optimization_decision": "",
+    "quantization_preparation": {},
+    "task": "detection"
+  }
+}

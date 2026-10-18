@@ -1,10 +1,44 @@
+# Local runtime data, audit databases, dependency caches and build outputs
 /data/
 /bin/
+/artifacts/
 /web/node_modules/
 /web/.next/
 /web/out/
-/web/*.tsbuildinfo
+*.tsbuildinfo
+
+# Generated perception output (the supplied replay metadata remains versionable)
+/navforge-gpu-deployment/output/*
+!/navforge-gpu-deployment/output/.gitkeep
+**/build/*.so
+**/build/*.so.*
+**/.run_output.txt
+
+# Large model/runtime artifacts stay local; provenance is in evidence/manifest.json
+*.onnx
+*.plan
+*.plan.key
+*.engine
+*.mp4
+*.webm
+*.mkv
+*.avi
+*.tar.gz
+*.zip
+*.part
+
+# Compiler caches, logs and operating-system/editor debris
+*.cache
 *.log
+__pycache__/
+*.py[cod]
+.DS_Store
+Thumbs.db
+*.tmp
+*.bak
+*.swp
+
+# Local credentials; keep templates versionable
 .env
-.env.local
-/artifacts/
+.env.*
+!.env.example

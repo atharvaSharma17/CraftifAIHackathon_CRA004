@@ -1,22 +1,58 @@
 {
-  "status": "pending-real-pipegen-run",
-  "claim": "Local application foundation only; no measured GPU or inference results yet",
+  "status": "export-integrated-calibration-and-fresh-gpu-validation-pending",
+  "claim": "Supplied PipeGen metadata replay integrated; no verified physical calibration or fresh GPU causal route trace",
   "pipegen_version": null,
-  "model": null,
-  "precision": null,
-  "input_dimensions": null,
+  "model": "Active supplied deployment: forklift.fp16.plan; separate original model report: yolov8n",
+  "precision": "FP16 filename for forklift engine; original yolov8n report records mixed FP16/FP32",
+  "input_dimensions": [
+    640,
+    640
+  ],
   "artifacts": {
     "requirement_stage": null,
-    "pipeline_ir_stage": null,
-    "model_stage": null,
-    "compiler_stage": null,
+    "pipeline_ir_stage": "PipelineIR.json (source; screenshot still pending)",
+    "model_stage": "model_stage/ModelStage.json (yolov8n, not forklift)",
+    "compiler_stage": "model_stage/compile.data.json (yolov8n, not forklift)",
     "run_stage": null,
-    "tensorrt_engine": null,
+    "tensorrt_engine": "navforge-gpu-deployment/model_stage/forklift.fp16.plan",
     "speed_report": null,
     "gpu_execution_log": null,
-    "real_metadata_sample": null,
+    "original_yolov8n_run_log": "evidence/pipegen-yolov8n-original-run.txt (older zero-detection run; not forklift validation)",
+    "real_metadata_sample": "navforge-gpu-deployment/results/metadata.json",
     "verified_calibration": null,
     "causal_route_trace": null
+  },
+  "export_summary": {
+    "frames": 1254,
+    "frames_with_objects": 1251,
+    "objects": 2319,
+    "labels_observed": [
+      "forklift"
+    ],
+    "image_size": [
+      1920,
+      1080
+    ],
+    "boxes_over_80_percent_frame_area": 1898,
+    "note": "Metadata counts only; detection and occupancy accuracy are not established"
+  },
+  "sha256": {
+    "navforge-gpu-deployment/results/metadata.json": "b3f5c3122a5720e37b72a3a860953afd409362205bacc78c4545f43cf5eb13d5",
+    "navforge-gpu-deployment/model_stage/forklift.fp16.plan": "ba6d4656680b64559b8c5d1c64e54d2f8273bdb52052b17cabf769ed9718e2e3",
+    "model_stage/yolov8n.fp16.plan": "b362175af08291ce062a67977ff226734bf4d28843ae7e3529c79567ce8bd48f",
+    "PipelineIR.json": "6ae38af18d13eb52e28a8457a8a3af15c216319c66b22a6a4462b254c3071bc2"
+  },
+  "integration_checks": {
+    "date": "2026-10-18",
+    "full_recording_import": "1254 accepted frames; replay mode; unverified lanes remain UNKNOWN",
+    "video_http_range": "206; bytes 0-127/52517662; 128-byte response",
+    "go_tests_and_vet": "passed",
+    "dashboard_typecheck_and_build": "passed",
+    "browser_check": "passed: launcher, API state/stream, mission submission, original MP4 decoding/final-frame seeking and unverified 4-corner calibration download in Edge headless",
+    "causal_detour_test": "passed using explicitly synthetic calibration/repetition",
+    "fresh_gpu_run": "not verified: no existing PipeGen vendor container found in local or WSL Docker daemon",
+    "source_video": "User-confirmed Downloads/Camera1.mp4: MP4 headers contain 1254 samples over 52.25 seconds; browser duration 52.25; final seek to 52.208 seconds passes without decoder error",
+    "video_cache": "Cache-Control no-store plus session-specific video URL; earlier 21-second browser observation retracted"
   },
   "measured_results": null
 }
