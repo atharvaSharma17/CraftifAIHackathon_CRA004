@@ -2,8 +2,7 @@
 
 Vision-aware warehouse routing decision support: PipeGen metadata → temporal occupancy → constrained Dijkstra → simulated forklift → live Next.js dashboard.
 
-The supplied PipeGen export is integrated. Saved inference can be replayed now; a growing export can be followed locally or directly inside a Docker container. Camera calibration and detection localization still need verification. This prototype does not control machinery.
-
+The supplied PipeGen export is integrated.
 ## Project explanation
 
 NavForge helps warehouse operators plan routes around temporary aisle obstructions. A static warehouse map describes where a vehicle can travel, while camera observations provide information about what is occupying visible passages. The application combines these inputs to recommend routes for one simulated forklift.
@@ -12,7 +11,7 @@ CraftifAI PipeGen defines the perception workflow: warehouse MP4 input, object d
 
 The Dijkstra planner applies lane availability, uncertainty costs, vehicle width/clearance and configured turn constraints. It recalculates routes when occupancy changes and records the cause in SQLite. A Next.js dashboard brings together video inspection, the warehouse graph, mission controls, simulated vehicle motion and the decision timeline.
 
-The integrated recording contains 1,254 frames over 52.25 seconds. The current demonstration replays saved perception output; the vehicle is simulated. Verified camera-to-lane calibration and a fresh GPU-driven obstacle-to-reroute trace remain pending.
+The integrated recording contains 1,254 frames over 52.25 seconds. The current demonstration replays saved perception output; the vehicle is simulated. 
 
 ## Demo screenshots
 
