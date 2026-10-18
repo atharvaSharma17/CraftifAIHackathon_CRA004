@@ -4,6 +4,38 @@ Vision-aware warehouse routing decision support: PipeGen metadata → temporal o
 
 The supplied PipeGen export is integrated. Saved inference can be replayed now; a growing export can be followed locally or directly inside a Docker container. Camera calibration and detection localization still need verification. This prototype does not control machinery.
 
+## Project explanation
+
+NavForge helps warehouse operators plan routes around temporary aisle obstructions. A static warehouse map describes where a vehicle can travel, while camera observations provide information about what is occupying visible passages. The application combines these inputs to recommend routes for one simulated forklift.
+
+CraftifAI PipeGen defines the perception workflow: warehouse MP4 input, object detection, object tracking, and annotated-video plus structured-metadata outputs. The exported DeepStream pipeline uses TensorRT inference. NavForge's Go adapter consumes the actual exported frame metadata, preserving timestamps, object labels, confidence scores and track IDs. A temporal occupancy engine maps detection ground-contact approximations into configured camera polygons and uses confidence thresholds, persistence and clearing delays to reduce noisy lane changes.
+
+The Dijkstra planner applies lane availability, uncertainty costs, vehicle width/clearance and configured turn constraints. It recalculates routes when occupancy changes and records the cause in SQLite. A Next.js dashboard brings together video inspection, the warehouse graph, mission controls, simulated vehicle motion and the decision timeline.
+
+The integrated recording contains 1,254 frames over 52.25 seconds. The current demonstration replays saved perception output; the vehicle is simulated. Verified camera-to-lane calibration and a fresh GPU-driven obstacle-to-reroute trace remain pending.
+
+## Demo screenshots
+
+The screenshots below show the application running locally and the PipeGen Pipeline IR node graph. The repeated video screenshot supplied with the submission is included once.
+
+### Warehouse video with detection output
+
+![NavForge running at localhost:3000 with warehouse video at 00:42 and forklift detection boxes](evidence/screenshots/warehouse-video-detections.png)
+
+Recorded warehouse footage playing in the browser, with model-produced forklift labels and bounding boxes visible at approximately 00:42. This shows perception output and application playback; it is not an accuracy benchmark or proof of a fresh GPU run.
+
+### Simulated warehouse route
+
+![NavForge warehouse map showing the green A-B-C-G route and simulated forklift at Receiving](evidence/screenshots/warehouse-route.png)
+
+The operations map shows the planned route from Dispatch (A) through B and C to Receiving (G), with the simulated forklift at the destination. The alternate upper corridor is also visible. This screenshot demonstrates route visualization and simulated mission progress.
+
+### PipeGen Pipeline IR node graph
+
+![PipeGen Pipeline IR graph connecting Camera1.mp4 input to object detection, object tracking, saved video and metadata outputs](evidence/screenshots/pipegen-pipeline-ir.png)
+
+The PipeGen graph connects **MP4 warehouse CCTV input → object detection → object tracking → saved video and metadata file outputs**. It documents the perception pipeline used to produce the artifacts consumed by NavForge. The original graph export is preserved in [PipelineIR.json](PipelineIR.json).
+
 ## Start the integrated application (Windows)
 
 Requires Go 1.26+ and Node.js 22+. From this repository in PowerShell:

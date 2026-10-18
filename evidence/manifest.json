@@ -10,7 +10,9 @@
   ],
   "artifacts": {
     "requirement_stage": null,
-    "pipeline_ir_stage": "PipelineIR.json (source; screenshot still pending)",
+    "pipeline_ir_stage": "PipelineIR.json; node graph screenshot: evidence/screenshots/pipegen-pipeline-ir.png",
+    "application_video_screenshot": "evidence/screenshots/warehouse-video-detections.png (recorded video playback with detection overlays)",
+    "simulated_route_screenshot": "evidence/screenshots/warehouse-route.png (simulated mission visualization)",
     "model_stage": "model_stage/ModelStage.json (yolov8n, not forklift)",
     "compiler_stage": "model_stage/compile.data.json (yolov8n, not forklift)",
     "run_stage": null,
